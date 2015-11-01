@@ -2,25 +2,50 @@
 import turtle
 from basic_draw_class.basic_draw import *
 import time
+from basic_draw_class.a_turtle_machine import *
 from math import sqrt
-
-P0 = 40
-RADIUS = 10
+import random
+P0 = 80
+RADIUS = 20
 Kr = 1
+
+def init_obstacle_and_path(id=1):
+    if id == 1:
+        basic_mul = 2
+        obstacle = Polygon(Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50))
+        obstacle_list = list()
+        obstacle_list.append(obstacle * basic_mul)
+        obstacle = Polygon(*[Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50)])
+        obstacle = obstacle.translate(100, 100)
+        obstacle_list.append(obstacle * basic_mul)
+        path = [Point(0, -80), Point(-70, -60), Point(-80, 30), Point(40, 30), Point(40, 20), Point(70, 20)]
+        path = [p * basic_mul for p in path]
+    elif id  == 2:
+        basic_mul = 2
+        obstacle = Polygon(Point(-100, 0), Point(0, 0), Point(-100, -100), Point(-200, -100))
+        obstacle_list = list()
+        obstacle_list.append(obstacle * basic_mul)
+        obstacle = obstacle.translate(140, 0)
+        obstacle_list.append(obstacle * basic_mul)
+        path = [Point(-100, 10), Point(20, 10), Point(-80, -100)]
+        path = [p * basic_mul for p in path]
+    elif id == 3:
+        basic_mul = 2
+        obstacle = Circle(Point(0,0), 10)
+        obstacle_list = list()
+        obstacle_list.append(obstacle * basic_mul)
+        for i in range(20):
+            obstacle = obstacle.translate(random.randint(-100, 100), i*100)
+        path = [Point(-100, 10), Point(20, 10), Point(-80, -100)]
+        path = [p * basic_mul for p in path]
+    return obstacle_list, path
 
 
 def test_draw():
-    obstacle = Polygon(Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50))
-    obstacle_list = list()
-    obstacle_list.append(obstacle)
-    obstacle = Polygon(*[Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50)])
-    obstacle = obstacle.translate(100, 100)
-
-    print obstacle.vertices
-    draw(obstacle.vertices, True)
+    obstacle_list, path = init_obstacle_and_path()
     draw(obstacle_list[0].vertices, True)
-    path = [Point(0, -100), Point(-100, -100), Point(-100, 30), Point(20, 30), Point(20, 20), Point(50, 20)]
     draw(path)
+
 
 
 def test_calculate_f1():
@@ -28,18 +53,12 @@ def test_calculate_f1():
     draw(line)
 
     f1 = calculate_f1(*line)
-    print f1
     draw([line[1], line[1] + f1*100])
     time.sleep(10)
 
 
 def test_calculate_f2():
-    obstacle = Polygon(Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50))
-    obstacle_list = list()
-    obstacle_list.append(obstacle)
-    obstacle = obstacle.translate(100, 100)
-    obstacle_list.append(obstacle)
-    path = [Point(0, -80), Point(-70, -60), Point(-80, 30), Point(40, 30), Point(40, 20), Point(70, 20)]
+    obstacle_list, path = init_obstacle_and_path()
     f2_list = list()
     f2_list.append(Point(0, 0))
 
@@ -50,7 +69,7 @@ def test_calculate_f2():
     draw(path)
     for i in range(len(path)-1):
         print path[i], f2_list[i]
-        draw([path[i], path[i] + f2_list[i]])
+        draw([path[i], path[i] + f2_list[i]*10])
     time.sleep(10)
 
 
@@ -68,17 +87,21 @@ def calculate_f2(point, obstacle_tuple):
                     calculate_bubble_max_size_in_p(Point(point.x, point.y + h*y), obstacle_tuple)
         pian_dao = Point(new_x, new_y) / (2.0 * h)
         Fr = pian_dao * Kr * (p-P0)
-        print Fr
         return Fr
 
 
 def calculate_bubble_max_size_in_p(point, obstacle_tuple):
     t_dis_list = list([P0])
     for obstacle in obstacle_tuple:
-        for side in obstacle.sides:
-            t_dis = side.distance(point)
-            t_dis_list.append(t_dis)
-    return min(t_dis_list)
+        if isinstance(obstacle, Polygon):
+            for side in obstacle.sides:
+                t_dis = side.distance(point)
+                t_dis_list.append(t_dis)
+            return min(t_dis_list)
+        elif isinstance(obstacle, Circle):
+            return max(obstacle.p.distance(point) - obstacle.r, 0)
+        elif isinstance(obstacle, Point):
+            return obstacle.distance(point)
 
 
 def unit_length(start, direction):
@@ -91,10 +114,11 @@ def calculate_f1(start_p, mid_p, end_p):
     return Point(u_line1.x+u_line2.x, u_line1.y+u_line2.y)
 
 
-def draw(point_tuple, close=False):
+def draw(point_tuple, close=False, draw_circle=True):
 
     start = point_tuple[0]
-    basic_mul = 2
+    # Enlarged drawn images
+    basic_mul = 1
     pen = turtle.Turtle()
     pen.hideturtle()
     pen.up()
@@ -103,18 +127,22 @@ def draw(point_tuple, close=False):
     for p in point_tuple:
 
         pen.setpos(p.x*basic_mul, p.y*basic_mul)
-        pen.dot(10, 'red')
-        if isinstance(p, Circle):
+        pen.dot(7, 'red')
+        if draw_circle and isinstance(p, Circle):
             pen.speed(0)
             pen.up()
             pen.forward(p.r*basic_mul)
             pen.left(90)
             pen.down()
-            pen.circle(p.r*basic_mul)
+            for i in range(18):
+                if i % 2 == 0:
+                    pen.up()
+                else:
+                    pen.down()
+                pen.circle(p.r*basic_mul, 20)
             pen.up()
             pen.setpos(p.x*basic_mul, p.y*basic_mul)
             pen.down()
-
     if close is True:
         pen.setpos(start.x*basic_mul, start.y*basic_mul)
     return pen
@@ -132,6 +160,8 @@ def divide_line_into_mul_circle(start, end, obstacle_list):
         r = calculate_bubble_max_size_in_p(start_p, obstacle_list)
         result_list.append(Circle(start_p, r))
         m += r
+        if r < 1: # 没什么作用的语句
+            break
         start_p = start + direction * m
     r = calculate_bubble_max_size_in_p(end, obstacle_list)
     result_list.append(Circle(end, r))
@@ -152,7 +182,7 @@ def add_point_to_path(path, obstacle_list):
     new_path = list()
     for i in range(len(path)-1):
         distance = path[i].distance(path[i+1])
-        if distance < path[i].r+path[i+1].r:
+        if distance < 0.95*(path[i].r+path[i+1].r):
             new_path.append(path[i])
             continue
         else:
@@ -180,60 +210,162 @@ def remove_duplicate_point_in_path(path):
     return path
 
 
-def final_main():
-    obstacle = Polygon(Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50))
-    obstacle_list = list()
-    obstacle_list.append(obstacle)
-    obstacle = obstacle.translate(100, 100)
-    obstacle_list.append(obstacle)
-    path = [Point(0, -80), Point(-70, -60), Point(-80, 30), Point(40, 30), Point(40, 20), Point(70, 20)]
+def opti_force(before_point, after_point, origin_force):
+    dis = Point.distance(before_point, after_point)
+    u = after_point-before_point
+    dian_cheng = origin_force.dot(u)
+    return (origin_force - origin_force * dian_cheng / dis / dis)
+
+
+def cal_total_force_for_mid_point(before_point, after_point, mid_point, obstacle_list):
+    f1 = calculate_f1(before_point, mid_point, after_point)
+    f2 = calculate_f2(mid_point, obstacle_list)
+    origin_f_total = f1*5+f2
+    return opti_force(before_point, after_point, origin_f_total)
+
+def final_main(obstacle_list, path):
     new_path = list()
     for i in range(len(path)-1):
         new_path += divide_line_into_mul_circle(path[i], path[i+1], obstacle_list)
-
     new_path = remove_duplicate_point_in_path(new_path)
     new_path = remove_too_close_point_in_path(new_path)
 
-    for ob in obstacle_list:
-        draw(ob.vertices, True)
-    draw(path)
-    pen1 = draw(new_path)
-
-    for _ in range(50):
-        f2_list = list([Point(0, 0)])
-        f1_list = list([Point(0, 0)])
+    heat = 15.0
+    min_distance = 4
+    while min_distance > 3:
+        min_distance = 0   # 用于终止计算线路迭代
         for i in range(len(new_path)-2):
-            f1_list.append(calculate_f1(new_path[i], new_path[i+1], new_path[i+2],))
-            f2_list.append(calculate_f2(new_path[i+1], obstacle_list))
-        f1_list.append(Point(0, 0))
-        f2_list.append(Point(0, 0))
+            opti_f = cal_total_force_for_mid_point(new_path[i], new_path[i+2], new_path[i+1], obstacle_list)
+            new_path[i+1] = Circle(new_path[i+1] + opti_f*heat/10.0, 0)
+            min_distance = max(opti_f, min_distance)
+            # 优化力的计算
+        heat = heat / 1.5
 
-        f_total = [f1_list[i]*5+f2_list[i] for i in range(len(f1_list))]
-        # 优化力的计算
-        f_opti = [Point(0, 0)]
-        for i in range(len(f_total)-2):
-            dis = Point.distance(new_path[i], new_path[i+2])
-            u = new_path[i+2]-new_path[i]
-            dian_cheng = f_total[i+1].dot(u)
-            f_opti.append(f_total[i+1] - f_total[i+1] * dian_cheng / dis / dis)
-        f_opti.append(Point(0, 0))
-
-        new_path = [Circle(new_path[i]+f_opti[i], 0) for i in range(len(f1_list))]
         new_path = flush_point_in_path(new_path, obstacle_list)
         new_path = remove_duplicate_point_in_path(new_path)
         new_path = remove_too_close_point_in_path(new_path)
         new_path = add_point_to_path(new_path, obstacle_list)
 
+        print heat
+        if heat < 3:
+            break
+    return new_path
 
-        pen2 = draw(new_path)
-        pen1.clear()
-        pen1 = pen2
+
+def init_robot_pen():
+    robot = turtle.Turtle()
+    robot.speed(1)
+    robot = turtle.Turtle()
+    robot.up()
+    robot.setpos(path[0].x, path[0].y)
+    '''robot.setheading(robot.towards(path[1].x, path[1].y))'''
+    robot.shape('turtle')
+    robot.down()
+    robot.color('blue')
+    return robot
+
+def move_follow_path(path, robot):
+    path.pop(0)
+    while path:
+        target_point = path.pop(0)
+        last_distance = 100000
+        while True:#Point(robot.pos()[0], robot.pos()[1]).distance(target_point) < last_distance:
+            last_distance = Point(robot.pos()[0], robot.pos()[1]).distance(target_point)
+            rhead = robot.heading()
+            phead = Point(target_point.x - robot.pos()[0], target_point.y - robot.pos()[1]).get_angle_from_zero_zero()
+            angle = get_turn_left_angle(phead, rhead)
+
+            max_turn_angle = 5
+            if abs(abs(angle)-360) % 360 > 3 and abs(angle) > 3:
+                if abs(angle) > max_turn_angle:
+                    robot.left(max_turn_angle * angle / abs(angle))
+                else:
+                    robot.left(angle)
+            robot.forward(5)
+            if Point(robot.pos()[0], robot.pos()[1]).distance(target_point) < 5:
+                break
+
+
+def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=3):
+    draw_time = draw_frequence
+    pen_list = []
+    while len(path) >= 2:
+        path = final_main(ob_list, path)
+        draw_time += 1
+        if draw_time >= draw_frequence:
+            pen = draw(path, draw_circle=False)
+            pen_list.append(pen)
+            if len(pen_list) > max_pen_list:
+                first_pen = pen_list.pop(0)
+                first_pen.clear()
+            draw_time -= draw_frequence
+        start_point = path.pop(0)
+        target_point = path[0]
+        rhead = robot.heading()
+        phead = Point(target_point.x - start_point.x, target_point.y - start_point.y).get_angle_from_zero_zero()
+        angle = get_turn_left_angle(phead, rhead)
+        max_turn_angle = 5
+        if abs(abs(angle)-360) % 360 > 3 and abs(angle) > 3:
+            if abs(angle) > max_turn_angle:
+                robot.left(max_turn_angle * angle / abs(angle))
+            else:
+                robot.left(angle)
+        robot.forward(5)
+        start_point = robot.pos()
+        start_point = Point(start_point[0], start_point[1])
+        if start_point.distance(target_point) < 5:
+            path.pop(0)
+        path.insert(0, Circle(start_point, 0))
+    print 'end'
+
+
+def get_turn_left_angle(target_head, now_head):
+
+    if target_head < 180:
+        if now_head < target_head:
+            return target_head - now_head
+        elif now_head > target_head + 180:
+            return target_head - now_head + 360
+        else:
+            return target_head - now_head
+    else:
+        if target_head-180 < now_head < target_head:
+            return target_head - now_head
+        elif target_head < now_head:
+            return target_head - now_head
+        else:
+            return target_head - now_head - 360
+
+def show_demo(): # 15年9月demo
+    '''test_draw()
+    turtle.Screen().bye()
+    test_calculate_f1()
+    turtle.Screen().bye()
+    test_calculate_f2()
+    turtle.Screen().bye()'''
+    ob_list, path = init_obstacle_and_path(1)
+    for ob in ob_list:
+        draw(ob.vertices, True)
+    path = final_main(ob_list, path)
+    draw(path)
+    robot = init_robot_pen()
+    move_follow_path(path, robot)
     time.sleep(100)
 
+def test_my_turtle():
+    z = my_turtle([90, 120, 60], [100]*3)
+    z.forward(100)
+    time.sleep(10)
 
 if __name__ == '__main__':
-    final_main()
-
+    ob_list, path = init_obstacle_and_path(1)
+    turtle.Turtle().getscreen().screensize(100, 2000)
+    for ob in ob_list:
+        draw(ob.vertices, True)
+    robot = init_robot_pen()
+    draw(path)
+    dynamic_windows_follow(ob_list, path, robot, draw_frequence=10)
+    time.sleep(60)
 
 
 

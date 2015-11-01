@@ -26,6 +26,11 @@ class Point(object):
     def dot(self, other):
         return self.x*other.x+self.y*other.y
 
+    def get_angle_from_zero_zero(self):
+        # 从原点到改点的向量的角度   0~360
+        result = round(math.atan2(self.y, self.x)*180.0/math.pi, 10) % 360.0
+        return result
+
     def __str__(self):
         return str((self.x, self.y))
 
@@ -63,14 +68,23 @@ class Segment(object):
 class Circle(Point):
     def __init__(self, point, r):
         super(Circle, self).__init__(point.x, point.y)
-        self.p = point
+        if isinstance(point, Point):
+            self.p = point
+        elif isinstance(point, Circle):
+            self.p = point.p
         self.r = r
 
     def __eq__(self, other):
-        if abs(self.r - other.r) < 10**-6 and self.p == other.p:
-            return True
-        else:
-            return False
+        if isinstance(other, Circle):
+            if abs(self.r - other.r) < 10**-6 and self.p == other.p:
+                return True
+            else:
+                return False
+        elif isinstance(other, Point):
+            if self.p.x == other.x and self.p.y == other.y:
+                return True
+            else:
+                return False
 
     def contain(self, point):
         if self.p.distance(point) <= self.r:
@@ -79,10 +93,14 @@ class Circle(Point):
             return False
 
     def inter(self, other):
-        if self.p.distance(other.p) < self.r+other.r:
+        if self.p.distance(other.p) < (self.r+other.r):
             return True
         else:
             return False
+
+    def translate(self, x, y):
+        tran = Point(x, y)
+        return Circle(self.p + tran, self.r)
 
 class Polygon(object):
 
@@ -92,6 +110,9 @@ class Polygon(object):
 
     def __str__(self):
         return self.vertices
+
+    def __mul__(self, other):
+        return Polygon(*[point * other for point in self.vertices])
 
     def translate(self, x, y):
         tran = Point(x, y)
