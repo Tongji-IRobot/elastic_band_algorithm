@@ -20,7 +20,7 @@ def init_obstacle_and_path(id=1):
         obstacle_list.append(obstacle * basic_mul)
         path = [Point(0, -80), Point(-70, -60), Point(-80, 30), Point(40, 30), Point(40, 20), Point(70, 20)]
         path = [p * basic_mul for p in path]
-    elif id  == 2:
+    elif id == 2:
         basic_mul = 2
         obstacle = Polygon(Point(-100, 0), Point(0, 0), Point(-100, -100), Point(-200, -100))
         obstacle_list = list()
@@ -31,46 +31,13 @@ def init_obstacle_and_path(id=1):
         path = [p * basic_mul for p in path]
     elif id == 3:
         basic_mul = 2
-        obstacle = Circle(Point(0,0), 10)
+        obstacle =  Polygon(Point(-5, -5), Point(5, -5), Point(5, 5), Point(-5, 5))
         obstacle_list = list()
-        obstacle_list.append(obstacle * basic_mul)
-        for i in range(20):
-            obstacle = obstacle.translate(random.randint(-100, 100), i*100)
-        path = [Point(-100, 10), Point(20, 10), Point(-80, -100)]
+        for i in range(7):
+            obstacle_list.append(obstacle.translate(random.randint(-50, 50), i*40+40) * basic_mul)
+        path = [Point(0, 0), Point(0, 300)]
         path = [p * basic_mul for p in path]
     return obstacle_list, path
-
-
-def test_draw():
-    obstacle_list, path = init_obstacle_and_path()
-    draw(obstacle_list[0].vertices, True)
-    draw(path)
-
-
-
-def test_calculate_f1():
-    line = [Point(-50, -50), Point(-50, 0), Point(50, 40)]
-    draw(line)
-
-    f1 = calculate_f1(*line)
-    draw([line[1], line[1] + f1*100])
-    time.sleep(10)
-
-
-def test_calculate_f2():
-    obstacle_list, path = init_obstacle_and_path()
-    f2_list = list()
-    f2_list.append(Point(0, 0))
-
-    for i in range(len(path)-2):
-        f2_list.append(calculate_f2(path[i+1], obstacle_list))
-    for ob in obstacle_list:
-        draw(ob.vertices, True)
-    draw(path)
-    for i in range(len(path)-1):
-        print path[i], f2_list[i]
-        draw([path[i], path[i] + f2_list[i]*10])
-    time.sleep(10)
 
 
 def calculate_f2(point, obstacle_tuple):
@@ -93,15 +60,16 @@ def calculate_f2(point, obstacle_tuple):
 def calculate_bubble_max_size_in_p(point, obstacle_tuple):
     t_dis_list = list([P0])
     for obstacle in obstacle_tuple:
+
         if isinstance(obstacle, Polygon):
             for side in obstacle.sides:
                 t_dis = side.distance(point)
                 t_dis_list.append(t_dis)
-            return min(t_dis_list)
         elif isinstance(obstacle, Circle):
-            return max(obstacle.p.distance(point) - obstacle.r, 0)
+            t_dis_list.append(obstacle.p.distance(point) - obstacle.r, 0)
         elif isinstance(obstacle, Point):
-            return obstacle.distance(point)
+            t_dis_list.append(obstacle.distance(point))
+    return min(t_dis_list)
 
 
 def unit_length(start, direction):
@@ -114,7 +82,7 @@ def calculate_f1(start_p, mid_p, end_p):
     return Point(u_line1.x+u_line2.x, u_line1.y+u_line2.y)
 
 
-def draw(point_tuple, close=False, draw_circle=True):
+def draw(point_tuple, close=False, draw_circle=True, point_color='red'):
 
     start = point_tuple[0]
     # Enlarged drawn images
@@ -127,7 +95,7 @@ def draw(point_tuple, close=False, draw_circle=True):
     for p in point_tuple:
 
         pen.setpos(p.x*basic_mul, p.y*basic_mul)
-        pen.dot(7, 'red')
+        pen.dot(7, point_color)
         if draw_circle and isinstance(p, Circle):
             pen.speed(0)
             pen.up()
@@ -160,7 +128,7 @@ def divide_line_into_mul_circle(start, end, obstacle_list):
         r = calculate_bubble_max_size_in_p(start_p, obstacle_list)
         result_list.append(Circle(start_p, r))
         m += r
-        if r < 1: # 没什么作用的语句
+        if r < 3:
             break
         start_p = start + direction * m
     r = calculate_bubble_max_size_in_p(end, obstacle_list)
@@ -223,6 +191,7 @@ def cal_total_force_for_mid_point(before_point, after_point, mid_point, obstacle
     origin_f_total = f1*5+f2
     return opti_force(before_point, after_point, origin_f_total)
 
+
 def final_main(obstacle_list, path):
     new_path = list()
     for i in range(len(path)-1):
@@ -252,13 +221,13 @@ def final_main(obstacle_list, path):
     return new_path
 
 
-def init_robot_pen():
+def init_robot_pen(init_point):
     robot = turtle.Turtle()
     robot.speed(1)
     robot = turtle.Turtle()
     robot.up()
-    robot.setpos(path[0].x, path[0].y)
-    '''robot.setheading(robot.towards(path[1].x, path[1].y))'''
+    robot.setpos(init_point.x, init_point.y)
+    robot.setheading(robot.towards(init_point.x, init_point.y))
     robot.shape('turtle')
     robot.down()
     robot.color('blue')
@@ -293,7 +262,7 @@ def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=
         path = final_main(ob_list, path)
         draw_time += 1
         if draw_time >= draw_frequence:
-            pen = draw(path, draw_circle=False)
+            pen = draw(path, draw_circle=True, point_color='blue')
             pen_list.append(pen)
             if len(pen_list) > max_pen_list:
                 first_pen = pen_list.pop(0)
@@ -336,6 +305,7 @@ def get_turn_left_angle(target_head, now_head):
         else:
             return target_head - now_head - 360
 
+
 def show_demo(): # 15年9月demo
     '''test_draw()
     turtle.Screen().bye()
@@ -348,24 +318,22 @@ def show_demo(): # 15年9月demo
         draw(ob.vertices, True)
     path = final_main(ob_list, path)
     draw(path)
-    robot = init_robot_pen()
+    robot = init_robot_pen(path[0])
     move_follow_path(path, robot)
     time.sleep(100)
+
 
 def test_my_turtle():
     z = my_turtle([90, 120, 60], [100]*3)
     z.forward(100)
     time.sleep(10)
 
+
+from test_python import *
+
 if __name__ == '__main__':
-    ob_list, path = init_obstacle_and_path(1)
-    turtle.Turtle().getscreen().screensize(100, 2000)
-    for ob in ob_list:
-        draw(ob.vertices, True)
-    robot = init_robot_pen()
-    draw(path)
-    dynamic_windows_follow(ob_list, path, robot, draw_frequence=10)
-    time.sleep(60)
+
+    test_dynamic_demo()
 
 
 
