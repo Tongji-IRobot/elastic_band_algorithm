@@ -23,6 +23,9 @@ class Point(object):
     def distance(self, other):
         return math.sqrt((self.x - other.x)**2 + (self.y-other.y)**2)
 
+    def __str__(self):
+        return (self.x, self.y)
+
     def dot(self, other):
         return self.x*other.x+self.y*other.y
 
@@ -35,7 +38,7 @@ class Point(object):
         return str((self.x, self.y))
 
     def __eq__(self, other):
-        if abs(self.x - other.x) < 10**-6 and  abs(self.y - other.y)< 10**-6:
+        if abs(self.x - other.x) < 10**-6 and abs(self.y - other.y) < 10**-6:
             return True
         else:
             return False
@@ -49,6 +52,11 @@ class Segment(object):
 
     def __str__(self):
         return 'start ', self.start,' end ',self.end
+
+    def unit_length(self):
+        start = self.start
+        direction = self.end
+        return Point((direction.x-start.x), (direction.y-start.y))/start.distance(direction)
 
     def distance(self, point):
         if isinstance(point, Point):

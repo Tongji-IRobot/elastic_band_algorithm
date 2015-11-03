@@ -46,11 +46,10 @@ def test_calculate_f2():
 
 def test_dynamic_demo():
     ob_list, path = init_obstacle_and_path(1)
-    turtle.Turtle().getscreen().screensize(100, 2000)
     for ob in ob_list:
         draw(ob.vertices, True, draw_circle=True)
-    robot = init_robot_pen(path[0])
+    robot = init_robot_pen(path[0], path[1])
     draw(path)
-    dynamic_windows_follow(ob_list, path, robot, draw_frequence=1000)
+    dynamic_windows_follow(ob_list, path, robot, draw_frequence=100)
     time.sleep(60)
 

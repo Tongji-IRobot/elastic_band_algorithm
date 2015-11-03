@@ -18,6 +18,8 @@ def init_obstacle_and_path(id=1):
         obstacle = Polygon(*[Point(-50, -50), Point(-50, 0), Point(0, 20), Point(30, 0), Point(30, -50)])
         obstacle = obstacle.translate(100, 100)
         obstacle_list.append(obstacle * basic_mul)
+        obstacle = obstacle.translate(-150, -240)
+        obstacle_list.append(obstacle * basic_mul)
         path = [Point(0, -80), Point(-70, -60), Point(-80, 30), Point(40, 30), Point(40, 20), Point(70, 20)]
         path = [p * basic_mul for p in path]
     elif id == 2:
@@ -30,13 +32,16 @@ def init_obstacle_and_path(id=1):
         path = [Point(-100, 10), Point(20, 10), Point(-80, -100)]
         path = [p * basic_mul for p in path]
     elif id == 3:
+        turtle.Turtle().getscreen().screensize(100, 2000)
         basic_mul = 2
-        obstacle =  Polygon(Point(-5, -5), Point(5, -5), Point(5, 5), Point(-5, 5))
+        size = 10
+        obstacle =  Polygon(Point(-size, -size), Point(size, -size), Point(size, size), Point(-size, size))
         obstacle_list = list()
         for i in range(7):
-            obstacle_list.append(obstacle.translate(random.randint(-50, 50), i*40+40) * basic_mul)
-        path = [Point(0, 0), Point(0, 300)]
+            obstacle_list.append(obstacle.translate(random.randint(-60, 60), i*60+50) * basic_mul)
+        path = [Point(0, 0), Point(0, 460)]
         path = [p * basic_mul for p in path]
+
     return obstacle_list, path
 
 
@@ -82,12 +87,13 @@ def calculate_f1(start_p, mid_p, end_p):
     return Point(u_line1.x+u_line2.x, u_line1.y+u_line2.y)
 
 
-def draw(point_tuple, close=False, draw_circle=True, point_color='red'):
+def draw(point_tuple, close=False, draw_circle=False, point_color='red', basic_mul=1):
 
     start = point_tuple[0]
     # Enlarged drawn images
-    basic_mul = 1
+
     pen = turtle.Turtle()
+
     pen.hideturtle()
     pen.up()
     pen.setpos(start.x*basic_mul, start.y*basic_mul)
@@ -221,13 +227,13 @@ def final_main(obstacle_list, path):
     return new_path
 
 
-def init_robot_pen(init_point):
+def init_robot_pen(init_point, next_point):
     robot = turtle.Turtle()
     robot.speed(1)
     robot = turtle.Turtle()
     robot.up()
     robot.setpos(init_point.x, init_point.y)
-    robot.setheading(robot.towards(init_point.x, init_point.y))
+    robot.setheading(robot.towards(next_point.x, next_point.y))
     robot.shape('turtle')
     robot.down()
     robot.color('blue')
@@ -262,7 +268,7 @@ def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=
         path = final_main(ob_list, path)
         draw_time += 1
         if draw_time >= draw_frequence:
-            pen = draw(path, draw_circle=True, point_color='blue')
+            pen = draw(path, draw_circle=False, point_color='blue')
             pen_list.append(pen)
             if len(pen_list) > max_pen_list:
                 first_pen = pen_list.pop(0)
@@ -282,7 +288,7 @@ def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=
         robot.forward(5)
         start_point = robot.pos()
         start_point = Point(start_point[0], start_point[1])
-        if start_point.distance(target_point) < 5:
+        if start_point.distance(target_point) < 20:
             path.pop(0)
         path.insert(0, Circle(start_point, 0))
     print 'end'
@@ -318,7 +324,7 @@ def show_demo(): # 15年9月demo
         draw(ob.vertices, True)
     path = final_main(ob_list, path)
     draw(path)
-    robot = init_robot_pen(path[0])
+    robot = init_robot_pen(path[0], path[0])
     move_follow_path(path, robot)
     time.sleep(100)
 
@@ -330,10 +336,27 @@ def test_my_turtle():
 
 
 from test_python import *
+import A_start
+def final_main_combine_A_start():
+    ob_list, path = init_obstacle_and_path(3)
+    for ob in ob_list:
+        draw(ob.vertices, True)
+
+    robot = init_robot_pen(path[0], path[-1])
+    head = robot.heading()
+    raw_input('any key to start')
+    index = int(((head+22.5) % 360)/45)
+    direction = A_start.total_direct[index]
+    path = A_start.final_main(ob_list, path, direction)
+    draw(path)
+    path = final_main(ob_list, path)
+    draw(path)
+    dynamic_windows_follow(ob_list, path, robot, draw_frequence=30, max_pen_list=1)
+
 
 if __name__ == '__main__':
-
-    test_dynamic_demo()
-
+    m = raw_input('any key to start')
+    final_main_combine_A_start()
+    m = raw_input('any key to close')
 
 
