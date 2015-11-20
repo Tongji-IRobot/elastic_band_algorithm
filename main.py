@@ -5,6 +5,10 @@ import time
 from basic_draw_class.a_turtle_machine import *
 from math import sqrt
 import random
+import matplotlib
+import matplotlib.animation as animation
+import os
+os.popen()
 P0 = 80
 RADIUS = 20
 Kr = 1
@@ -41,7 +45,16 @@ def init_obstacle_and_path(id=1):
             obstacle_list.append(obstacle.translate(random.randint(-60, 60), i*60+50) * basic_mul)
         path = [Point(0, 0), Point(0, 460)]
         path = [p * basic_mul for p in path]
-
+    elif id == 4:
+        turtle.Turtle().getscreen().screensize(100, 2000)
+        basic_mul = 2
+        size = 10
+        obstacle = Polygon(Point(0, 50))
+        obstacle_list = list()
+        for i in range(6):
+            obstacle_list.append(obstacle.translate(random.randint(-60, 60), i*60+50) * basic_mul)
+        path = [Point(0, 0), Point(0, 460)]
+        path = [p * basic_mul for p in path]
     return obstacle_list, path
 
 
@@ -87,7 +100,7 @@ def calculate_f1(start_p, mid_p, end_p):
     return Point(u_line1.x+u_line2.x, u_line1.y+u_line2.y)
 
 
-def draw(point_tuple, close=False, draw_circle=False, point_color='red', basic_mul=1):
+def draw(point_tuple, close=False, draw_circle=False, point_color='red', basic_mul=1, draw_speed=0):
 
     start = point_tuple[0]
     # Enlarged drawn images
@@ -98,6 +111,7 @@ def draw(point_tuple, close=False, draw_circle=False, point_color='red', basic_m
     pen.up()
     pen.setpos(start.x*basic_mul, start.y*basic_mul)
     pen.down()
+    pen.speed(draw_speed)
     for p in point_tuple:
 
         pen.setpos(p.x*basic_mul, p.y*basic_mul)
@@ -198,7 +212,7 @@ def cal_total_force_for_mid_point(before_point, after_point, mid_point, obstacle
     return opti_force(before_point, after_point, origin_f_total)
 
 
-def final_main(obstacle_list, path):
+def final_main(obstacle_list, path, direction=None):
     new_path = list()
     for i in range(len(path)-1):
         new_path += divide_line_into_mul_circle(path[i], path[i+1], obstacle_list)
@@ -239,7 +253,7 @@ def init_robot_pen(init_point, next_point):
     robot.color('blue')
     return robot
 
-def move_follow_path(path, robot):
+def move_follow_path(path, robot, limit_step=10000000):
     path.pop(0)
     while path:
         target_point = path.pop(0)
@@ -257,29 +271,44 @@ def move_follow_path(path, robot):
                 else:
                     robot.left(angle)
             robot.forward(5)
+            if limit_step < 0:
+                return
+            else:
+                limit_step -= 1
             if Point(robot.pos()[0], robot.pos()[1]).distance(target_point) < 5:
                 break
 
 
-def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=3):
+def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=3, path_methond=[final_main], max_step=-1, method_frequence=1):
     draw_time = draw_frequence
     pen_list = []
+    m_fre = method_frequence
     while len(path) >= 2:
-        path = final_main(ob_list, path)
-        draw_time += 1
-        if draw_time >= draw_frequence:
-            pen = draw(path, draw_circle=False, point_color='blue')
-            pen_list.append(pen)
-            if len(pen_list) > max_pen_list:
-                first_pen = pen_list.pop(0)
-                first_pen.clear()
-            draw_time -= draw_frequence
+        m_fre+=1
+        if m_fre >= method_frequence:
+            m_fre=0
+
+            head = robot.heading()
+            index = int(((head+22.5) % 360)/45)
+            direction = A_start.total_direct[index]
+            for method in path_methond:
+                path = method(ob_list, path, direction)
+
+            draw_time += 1
+            if draw_time >= draw_frequence:
+                pen = draw(path, draw_circle=False, point_color='blue')
+                pen_list.append(pen)
+                if len(pen_list) > max_pen_list:
+                    first_pen = pen_list.pop(0)
+                    first_pen.clear()
+                draw_time =0
+
         start_point = path.pop(0)
         target_point = path[0]
         rhead = robot.heading()
         phead = Point(target_point.x - start_point.x, target_point.y - start_point.y).get_angle_from_zero_zero()
         angle = get_turn_left_angle(phead, rhead)
-        max_turn_angle = 5
+        max_turn_angle = 7
         if abs(abs(angle)-360) % 360 > 3 and abs(angle) > 3:
             if abs(angle) > max_turn_angle:
                 robot.left(max_turn_angle * angle / abs(angle))
@@ -290,8 +319,16 @@ def dynamic_windows_follow(ob_list, path, robot, draw_frequence=1, max_pen_list=
         start_point = Point(start_point[0], start_point[1])
         if start_point.distance(target_point) < 20:
             path.pop(0)
+            print 'pop one point'
         path.insert(0, Circle(start_point, 0))
+        if max_step == -1:
+            pass
+        elif max_step == 0:
+            return robot
+        else:
+            max_step -= 1
     print 'end'
+    return robot
 
 
 def get_turn_left_angle(target_head, now_head):
@@ -312,7 +349,7 @@ def get_turn_left_angle(target_head, now_head):
             return target_head - now_head - 360
 
 
-def show_demo(): # 15年9月demo
+def show_demo(d=(0, 1)): # 15年9月demo
     '''test_draw()
     turtle.Screen().bye()
     test_calculate_f1()
@@ -324,9 +361,9 @@ def show_demo(): # 15年9月demo
         draw(ob.vertices, True)
     path = final_main(ob_list, path)
     draw(path)
-    robot = init_robot_pen(path[0], path[0])
-    move_follow_path(path, robot)
-    time.sleep(100)
+    robot = init_robot_pen(path[d[0]], path[d[1]])
+    move_follow_path(path, robot, limit_step=200)
+
 
 
 def test_my_turtle():
@@ -337,26 +374,18 @@ def test_my_turtle():
 
 from test_python import *
 import A_start
-def final_main_combine_A_start():
-    ob_list, path = init_obstacle_and_path(3)
+
+def final_main_combine_A_start(ob_id=4,d=(0,1)):
+    ob_list, path = init_obstacle_and_path(ob_id)
     for ob in ob_list:
         draw(ob.vertices, True)
+    robot = init_robot_pen(path[d[0]], path[d[1]])
 
-    robot = init_robot_pen(path[0], path[-1])
-    head = robot.heading()
-    raw_input('any key to start')
-    index = int(((head+22.5) % 360)/45)
-    direction = A_start.total_direct[index]
-    path = A_start.final_main(ob_list, path, direction)
-    draw(path)
-    path = final_main(ob_list, path)
-    draw(path)
-    dynamic_windows_follow(ob_list, path, robot, draw_frequence=30, max_pen_list=1)
-
+    dynamic_windows_follow(ob_list, path, robot, path_methond=[A_start.final_main,], draw_frequence=1, max_pen_list=1,method_frequence=10)
+    time.sleep(5)
 
 if __name__ == '__main__':
-    m = raw_input('any key to start')
     final_main_combine_A_start()
-    m = raw_input('any key to close')
+
 
 

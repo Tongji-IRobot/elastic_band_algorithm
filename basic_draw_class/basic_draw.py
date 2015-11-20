@@ -8,6 +8,7 @@ class Point(object):
         self.x = x
         self.y = y
 
+
     def __add__(self, other):
         return Point(self.x+other.x, self.y+other.y)
 
@@ -56,10 +57,15 @@ class Segment(object):
     def unit_length(self):
         start = self.start
         direction = self.end
-        return Point((direction.x-start.x), (direction.y-start.y))/start.distance(direction)
+        if start == direction:
+            return Point(0, 0)
+        else:
+            return Point((direction.x-start.x), (direction.y-start.y))/start.distance(direction)
 
     def distance(self, point):
         if isinstance(point, Point):
+            if self.end == self.start:
+                return self.end.distance(point)
             seg_vector = self.end - self.start
             pt_vector = point - self.start
             t = seg_vector.dot(pt_vector)/self.length**2

@@ -15,6 +15,7 @@ class Grid(object):
         size = self.size
         ans = list()
         for ob in obstacle_list:
+
             for segment in ob.sides:
                 length = segment.length
                 unit = segment.unit_length()
@@ -29,6 +30,8 @@ class Grid(object):
     def find_a_root(self, start, end):
         size = self.size
         global target_point
+        global init_point
+        init_point = start
         target_point = end
         has_reach_p = set()
         heap = []
@@ -67,9 +70,19 @@ class Grid_point(Point):
         self.direction = direction
         self.father = father
         self.index_direct = total_direct.index(self.direction)
+        if self.father:
+            self.father_num = self.father.father_num+1
+        else:
+            self.father_num = 0
 
     def __lt__(self, other):
-        return self.distance(target_point) < other.distance(target_point)
+        my_dis = self.distance(target_point)
+        other_dis =  other.distance(target_point)
+        if my_dis < 10 or other_dis < 10:
+            return my_dis+self.father_num < other_dis+other.father_num
+        else:
+            return my_dis < other_dis
+
 
     def __eq__(self, other):
         if self.x == other.x and self.y == other.y:
@@ -99,7 +112,7 @@ class Grid_point(Point):
 
 
 target_point = Grid_point(0, 0, 'N')
-
+init_point = Grid_point(0, 0, 'N')
 
 def final_main(ob_list, path, direction='N'):
     grid = Grid(ob_list)
@@ -108,6 +121,7 @@ def final_main(ob_list, path, direction='N'):
     size = Grid.size
     root = grid.find_a_root(Grid_point(int((start.x+size/4)/size), int((start.y+size/4)/size), direction),
                             Grid_point(int((end.x+size/4)/size), int((end.y+size/4)/size), direction))
+    print 'A_star finish'
     return root
 
 

@@ -6,6 +6,9 @@ import time
 from basic_draw_class.a_turtle_machine import *
 from math import sqrt
 import random
+import cv2.cv as cv
+import cv2
+cv2.HoughLines
 P0 = 80
 RADIUS = 20
 Kr = 1
@@ -44,12 +47,23 @@ def test_calculate_f2():
     time.sleep(10)
 
 
-def test_dynamic_demo():
+def test_dynamic_demo(d=(0, 1),sleep=0):
     ob_list, path = init_obstacle_and_path(1)
     for ob in ob_list:
         draw(ob.vertices, True, draw_circle=True)
-    robot = init_robot_pen(path[0], path[1])
+    robot = init_robot_pen(path[d[0]], path[d[1]])
     draw(path)
-    dynamic_windows_follow(ob_list, path, robot, draw_frequence=100)
-    time.sleep(60)
+    dynamic_windows_follow(ob_list, path, robot, draw_frequence=50)
+    time.sleep(sleep)
 
+
+if __name__ == "__main__":
+    # main.show_demo()
+    # main.show_demo(d=(1, 0))
+    # turtle.Turtle().getscreen().clear()
+    # test_dynamic_demo(sleep=5)
+    # test_dynamic_demo(d=(0, 0), sleep=5)
+    # turtle.Turtle().getscreen().clear()
+    # main.final_main_combine_A_start(1)
+    # turtle.Turtle().getscreen().clear()
+    main.final_main_combine_A_start(1)
